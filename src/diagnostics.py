@@ -1,6 +1,11 @@
-import math
+
 import csv
 from pathlib import Path
+
+try:
+    from .validation import validate_vehicle_trace
+except ImportError:
+    from validation import validate_vehicle_trace
 
 
 def load_vehicle_trace():
@@ -19,62 +24,9 @@ def load_vehicle_trace():
     return readings
 
 
-def validate_vehicle_trace(readings):
-    """Validate sensor readings before diagnostic analysis."""
-
-    if not readings:
-        raise ValueError("Vehicle trace contains no readings.")
-
-    required_fields = [
-        "time_seconds",
-        "coolant_temp_c",
-    ]
-
-    previous_time = None
-
-    for index, reading in enumerate(readings):
-        for field in required_fields:
-            if field not in reading or reading[field] in (None, ""):
-                raise ValueError(
-                    f"Reading {index}: missing value for '{field}'."
-                )
-
-            try:
-                value = float(reading[field])
-            except (TypeError, ValueError):
-                raise ValueError(
-                    f"Reading {index}: '{field}' must be numeric."
-                ) from None
-
-            if not math.isfinite(value):
-                raise ValueError(
-                    f"Reading {index}: '{field}' must be finite."
-                )
-
-        current_time = float(reading["time_seconds"])
-        coolant_temp = float(reading["coolant_temp_c"])
-
-        if current_time < 0:
-            raise ValueError(
-                f"Reading {index}: timestamp cannot be negative."
-            )
-
-        if coolant_temp < -50 or coolant_temp > 200:
-            raise ValueError(
-                f"Reading {index}: coolant temperature is outside "
-                "the configured plausibility range."
-            )
-
-        if previous_time is not None and current_time <= previous_time:
-            raise ValueError(
-                f"Reading {index}: timestamps must be strictly increasing."
-            )
-
-        previous_time = current_time
-
-
 def analyse_coolant_temperature(readings):
     """Analyse coolant temperature and flag potential overheating."""
+
     validate_vehicle_trace(readings)
 
     temperatures = [
@@ -123,8 +75,14 @@ def main():
 
     print("\n--- TorqueTrace Diagnostic Report ---")
     print(f"Readings analysed: {len(readings)}")
-    print(f"Starting temperature: {result['starting_temperature_c']:.1f} C")
-    print(f"Highest temperature: {result['highest_temperature_c']:.1f} C")
+    print(
+        f"Starting temperature: "
+        f"{result['starting_temperature_c']:.1f} C"
+    )
+    print(
+        f"Highest temperature: "
+        f"{result['highest_temperature_c']:.1f} C"
+    )
     print(f"Temperature rise: {result['temperature_rise_c']:.1f} C")
     print(
         "Temperature rise rate: "

@@ -10,6 +10,86 @@ from hypotheses import rank_hypotheses
 
 class TestHypothesisRanking(unittest.TestCase):
 
+
+
+    def test_engine_load_above_100_is_rejected(self):
+        readings = [
+            {
+                "time_seconds": 0,
+                "coolant_temp_c": 90,
+                "rpm": 1500,
+                "engine_load_pct": 150,
+            },
+            {
+                "time_seconds": 10,
+                "coolant_temp_c": 95,
+                "rpm": 1800,
+                "engine_load_pct": 50,
+            },
+        ]
+
+        with self.assertRaisesRegex(ValueError, "plausible range"):
+            rank_hypotheses(readings)
+
+    def test_negative_rpm_is_rejected(self):
+        readings = [
+            {
+                "time_seconds": 0,
+                "coolant_temp_c": 90,
+                "rpm": -100,
+                "engine_load_pct": 20,
+            },
+            {
+                "time_seconds": 10,
+                "coolant_temp_c": 95,
+                "rpm": 1500,
+                "engine_load_pct": 30,
+            },
+        ]
+
+        with self.assertRaisesRegex(ValueError, "plausible range"):
+            rank_hypotheses(readings)
+
+    def test_nan_coolant_temperature_is_rejected(self):
+        readings = [
+            {
+                "time_seconds": 0,
+                "coolant_temp_c": "NaN",
+                "rpm": 1500,
+                "engine_load_pct": 20,
+            },
+            {
+                "time_seconds": 10,
+                "coolant_temp_c": 95,
+                "rpm": 1800,
+                "engine_load_pct": 30,
+            },
+        ]
+
+        with self.assertRaisesRegex(ValueError, "finite"):
+            rank_hypotheses(readings)
+
+    def test_decreasing_timestamps_are_rejected(self):
+        readings = [
+            {
+                "time_seconds": 10,
+                "coolant_temp_c": 90,
+                "rpm": 1500,
+                "engine_load_pct": 20,
+            },
+            {
+                "time_seconds": 5,
+                "coolant_temp_c": 95,
+                "rpm": 1800,
+                "engine_load_pct": 30,
+            },
+        ]
+
+        with self.assertRaisesRegex(ValueError, "strictly increasing"):
+            rank_hypotheses(readings)
+
+
+
     def test_high_temperature_ranks_cooling_first(self):
         readings = [
             {
@@ -32,8 +112,9 @@ class TestHypothesisRanking(unittest.TestCase):
             result["hypotheses"][0]["name"],
             "Cooling-system performance issue",
         )
-        self.assertEqual(result["hypotheses"][0]["score"], 3)
+        self.assertEqual(result["hypotheses"][0]["score"], 4)
 
+    
     def test_normal_trace_has_no_elevated_temperature_condition(self):
         readings = [
             {
@@ -56,10 +137,8 @@ class TestHypothesisRanking(unittest.TestCase):
             result["observed_condition"],
             "No elevated temperature under the configured rule",
         )
-        self.assertEqual(
-            result["hypotheses"][0]["score"],
-            0,
-        )
+        self.assertEqual(result["hypotheses"], [])
+
 
     def test_missing_rpm_is_rejected(self):
         readings = [
