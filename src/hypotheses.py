@@ -10,6 +10,41 @@ ELEVATED_TEMP_C = 105
 HIGH_ENGINE_LOAD_PCT = 50
 RAPID_RISE_C_PER_MIN = 10
 SIGNIFICANT_TEMP_RISE_C = 15
+SUSPICIOUS_TEMP_STEP_C = 15
+
+
+def detect_temperature_spike(temperatures):
+    """Flag an abrupt temperature rise followed by a sharp fall."""
+
+    for index in range(len(temperatures) - 2):
+        before = temperatures[index]
+        peak = temperatures[index + 1]
+        after = temperatures[index + 2]
+
+        rise = peak - before
+        fall = peak - after
+
+        if (
+            rise >= SUSPICIOUS_TEMP_STEP_C
+            and fall >= SUSPICIOUS_TEMP_STEP_C
+        ):
+            return {
+                "suspected": True,
+                "reason": (
+                    "Suspicious sudden temperature spike: "
+                    f"temperature rose from {before:.1f} C "
+                    f"to {peak:.1f} C, then fell to {after:.1f} C. "
+                    "Verify the sensor and original readings."
+                ),
+            }
+
+    return {
+        "suspected": False,
+        "reason": (
+            "No abrupt rise-and-fall temperature spike was "
+            "detected by the configured rule."
+        ),
+    }
 
 
 def rank_hypotheses(readings):
@@ -43,6 +78,9 @@ def rank_hypotheses(readings):
         float(row["time_seconds"]) for row in readings
     ]
 
+    # Detect a suspicious abrupt temperature rise and fall.
+    sensor_anomaly = detect_temperature_spike(temperatures)
+
     highest_temp = max(temperatures)
     highest_load = max(loads)
     highest_rpm = max(rpms)
@@ -61,7 +99,7 @@ def rank_hypotheses(readings):
 
     elevated_temp = highest_temp >= ELEVATED_TEMP_C
     high_load = highest_load >= HIGH_ENGINE_LOAD_PCT
-    
+
     rapid_rise = (
         temperature_rise >= SIGNIFICANT_TEMP_RISE_C
         and temperature_rise_rate >= RAPID_RISE_C_PER_MIN
@@ -204,12 +242,14 @@ def rank_hypotheses(readings):
         "highest_rpm": highest_rpm,
         "temperature_rise_c": temperature_rise,
         "temperature_rise_c_per_minute": temperature_rise_rate,
+        "sensor_anomaly": sensor_anomaly,
         "hypotheses": hypotheses,
         "score_note": (
             "Scores are prototype rule priorities, not fault "
             "probabilities or validated diagnostic confidence. "
             "Thresholds are illustrative and are not universal "
-            "vehicle-manufacturer specifications."
+            "vehicle-manufacturer specifications. The sensor anomaly "
+            "check is also a heuristic, not proof of sensor failure."
         ),
     }
 
@@ -219,6 +259,7 @@ def print_report(result):
 
     print("\n--- TorqueTrace Hypothesis Report ---")
     print(f"Observed condition: {result['observed_condition']}")
+
     print(
         f"Highest coolant temperature: "
         f"{result['highest_temperature_c']:.1f} C"
@@ -228,12 +269,22 @@ def print_report(result):
         f"{result['highest_engine_load_pct']:.1f}%"
     )
     print(f"Highest RPM: {result['highest_rpm']:.0f}")
+
     print(
         f"Temperature rise: {result['temperature_rise_c']:.1f} C"
     )
     print(
         "Temperature rise rate: "
         f"{result['temperature_rise_c_per_minute']:.1f} C/min"
+    )
+
+    print("\nSensor anomaly check:")
+    print(
+        f"  Suspected: "
+        f"{result['sensor_anomaly']['suspected']}"
+    )
+    print(
+        f"  Reason: {result['sensor_anomaly']['reason']}"
     )
 
     print("\nRanked investigation priorities:")

@@ -166,5 +166,47 @@ class TestHypothesisRanking(unittest.TestCase):
             rank_hypotheses(readings)
 
 
+
+
+
+    def test_sudden_temperature_spike_is_detected(self):
+        readings = [
+            {
+                "time_seconds": 0,
+                "coolant_temp_c": 85,
+                "rpm": 1000,
+                "engine_load_pct": 25,
+            },
+            {
+                "time_seconds": 10,
+                "coolant_temp_c": 86,
+                "rpm": 1100,
+                "engine_load_pct": 25,
+            },
+            {
+                "time_seconds": 20,
+                "coolant_temp_c": 115,
+                "rpm": 1100,
+                "engine_load_pct": 25,
+            },
+            {
+                "time_seconds": 30,
+                "coolant_temp_c": 87,
+                "rpm": 1100,
+                "engine_load_pct": 25,
+            },
+        ]
+
+        result = rank_hypotheses(readings)
+
+        self.assertTrue(
+            result["sensor_anomaly"]["suspected"]
+        )
+        self.assertIn(
+            "sudden temperature spike",
+            result["sensor_anomaly"]["reason"].lower(),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
