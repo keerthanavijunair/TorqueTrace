@@ -1,4 +1,3 @@
-
 import random
 
 from hypotheses import rank_hypotheses
@@ -87,6 +86,23 @@ def evaluate_dataset():
     correct = true_positive + true_negative
     accuracy = correct / total * 100
 
+    # Calculate metrics safely, including cases with zero predictions.
+    precision_denominator = true_positive + false_positive
+    recall_denominator = true_positive + false_negative
+
+    precision = (
+        true_positive / precision_denominator
+        if precision_denominator else 0.0
+    )
+    recall = (
+        true_positive / recall_denominator
+        if recall_denominator else 0.0
+    )
+    f1_score = (
+        2 * precision * recall / (precision + recall)
+        if precision + recall else 0.0
+    )
+
     print("--- TorqueTrace Synthetic Dataset Evaluation ---")
     print(f"Total traces: {total}")
     print(f"Correct predictions: {correct}")
@@ -98,9 +114,13 @@ def evaluate_dataset():
     print(f"False positives: {false_positive}")
     print(f"False negatives: {false_negative}")
     print()
+    print(f"Precision: {precision:.2%}")
+    print(f"Recall:    {recall:.2%}")
+    print(f"F1-score:  {f1_score:.2%}")
+    print()
     print(
         "Important: These are synthetic traces generated from predefined "
-        "rules. This score measures agreement with synthetic labels, "
+        "rules. These metrics measure agreement with synthetic labels, "
         "not real-world vehicle diagnostic accuracy."
     )
 
