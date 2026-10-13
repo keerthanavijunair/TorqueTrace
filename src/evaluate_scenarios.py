@@ -105,6 +105,47 @@ SCENARIOS = [
         ),
         "expected_anomaly": False,
     },
+    {
+        "name": "Borderline temperature below threshold",
+        "readings": [
+            make_reading(0, 90, 1000, 25),
+            make_reading(10, 97, 1100, 30),
+            make_reading(20, 104.9, 1200, 35),
+        ],
+        "expected_condition": (
+            "No elevated temperature under the configured rule"
+        ),
+        "expected_first_hypothesis": None,
+        "expected_anomaly": False,
+    },
+    {
+        "name": "High engine load without overheating",
+        "readings": [
+            make_reading(0, 85, 1800, 65),
+            make_reading(10, 88, 2200, 75),
+            make_reading(20, 92, 2500, 80),
+        ],
+        "expected_condition": (
+            "No elevated temperature under the configured rule"
+        ),
+        "expected_first_hypothesis": (
+            "Engine load may be contributing"
+        ),
+        "expected_anomaly": False,
+    },
+    {
+        "name": "Elevated temperature at low engine load",
+        "readings": [
+            make_reading(0, 90, 1000, 15),
+            make_reading(10, 103, 1100, 20),
+            make_reading(20, 110, 1200, 25),
+        ],
+        "expected_condition": "Elevated coolant temperature",
+        "expected_first_hypothesis": (
+            "Cooling-system performance issue"
+        ),
+        "expected_anomaly": False,
+    },
 ]
 
 
@@ -149,12 +190,17 @@ def evaluate_scenarios():
 
         print(f"{status}: {scenario['name']}")
         print(f"  Observed: {result['observed_condition']}")
-        print(
-            "  Top hypothesis: "
-            f"{result['hypotheses'][0]['name']}"
-            if result["hypotheses"]
-            else "  Top hypothesis: None supported by current rules"
-        )
+
+        if result["hypotheses"]:
+            print(
+                "  Top hypothesis: "
+                f"{result['hypotheses'][0]['name']}"
+            )
+        else:
+            print(
+                "  Top hypothesis: None supported by current rules"
+            )
+
         print(
             "  Sensor anomaly suspected: "
             f"{result['sensor_anomaly']['suspected']}"
