@@ -208,5 +208,77 @@ class TestHypothesisRanking(unittest.TestCase):
         )
 
 
+
+    def test_temperature_just_below_threshold(self):
+        readings = [
+            {
+                "time_seconds": 0,
+                "coolant_temp_c": 90,
+                "rpm": 1000,
+                "engine_load_pct": 25,
+            },
+            {
+                "time_seconds": 10,
+                "coolant_temp_c": 104.9,
+                "rpm": 1200,
+                "engine_load_pct": 30,
+            },
+        ]
+
+        result = rank_hypotheses(readings)
+
+        self.assertEqual(
+            result["observed_condition"],
+            "No elevated temperature under the configured rule",
+        )
+
+    def test_temperature_exactly_at_threshold(self):
+        readings = [
+            {
+                "time_seconds": 0,
+                "coolant_temp_c": 90,
+                "rpm": 1000,
+                "engine_load_pct": 25,
+            },
+            {
+                "time_seconds": 10,
+                "coolant_temp_c": 105.0,
+                "rpm": 1200,
+                "engine_load_pct": 30,
+            },
+        ]
+
+        result = rank_hypotheses(readings)
+
+        self.assertEqual(
+            result["observed_condition"],
+            "Elevated coolant temperature",
+        )
+
+    def test_temperature_just_above_threshold(self):
+        readings = [
+            {
+                "time_seconds": 0,
+                "coolant_temp_c": 90,
+                "rpm": 1000,
+                "engine_load_pct": 25,
+            },
+            {
+                "time_seconds": 10,
+                "coolant_temp_c": 105.1,
+                "rpm": 1200,
+                "engine_load_pct": 30,
+            },
+        ]
+
+        result = rank_hypotheses(readings)
+
+        self.assertEqual(
+            result["observed_condition"],
+            "Elevated coolant temperature",
+        )
+    
+
+
 if __name__ == "__main__":
     unittest.main()
