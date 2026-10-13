@@ -1,3 +1,4 @@
+
 from hypotheses import rank_hypotheses
 
 
@@ -22,6 +23,7 @@ SCENARIOS = [
             "No elevated temperature under the configured rule"
         ),
         "expected_first_hypothesis": None,
+        "expected_anomaly": False,
     },
     {
         "name": "High temperature, low engine load",
@@ -34,6 +36,7 @@ SCENARIOS = [
         "expected_first_hypothesis": (
             "Cooling-system performance issue"
         ),
+        "expected_anomaly": False,
     },
     {
         "name": "High temperature, high engine load",
@@ -46,6 +49,7 @@ SCENARIOS = [
         "expected_first_hypothesis": (
             "Cooling-system performance issue"
         ),
+        "expected_anomaly": False,
     },
     {
         "name": "Rapid temperature rise",
@@ -58,6 +62,48 @@ SCENARIOS = [
         "expected_first_hypothesis": (
             "Cooling-system performance issue"
         ),
+        "expected_anomaly": False,
+    },
+    {
+        "name": "Sudden temperature spike",
+        "readings": [
+            make_reading(0, 85, 1000, 25),
+            make_reading(10, 86, 1100, 25),
+            make_reading(20, 115, 1100, 25),
+            make_reading(30, 87, 1100, 25),
+        ],
+        "expected_condition": "Elevated coolant temperature",
+        "expected_first_hypothesis": (
+            "Cooling-system performance issue"
+        ),
+        "expected_anomaly": True,
+    },
+    {
+        "name": "Gradual heating below threshold",
+        "readings": [
+            make_reading(0, 80, 900, 20),
+            make_reading(30, 84, 1000, 22),
+            make_reading(60, 88, 1100, 25),
+            make_reading(90, 92, 1200, 28),
+        ],
+        "expected_condition": (
+            "No elevated temperature under the configured rule"
+        ),
+        "expected_first_hypothesis": None,
+        "expected_anomaly": False,
+    },
+    {
+        "name": "Temperature cools after elevated peak",
+        "readings": [
+            make_reading(0, 90, 1500, 40),
+            make_reading(10, 110, 1700, 45),
+            make_reading(20, 100, 1400, 35),
+        ],
+        "expected_condition": "Elevated coolant temperature",
+        "expected_first_hypothesis": (
+            "Cooling-system performance issue"
+        ),
+        "expected_anomaly": False,
     },
 ]
 
@@ -75,8 +121,6 @@ def evaluate_scenarios():
             == scenario["expected_condition"]
         )
 
-
-
         expected_top = scenario["expected_first_hypothesis"]
 
         if expected_top is None:
@@ -85,13 +129,18 @@ def evaluate_scenarios():
             first_hypothesis_ok = (
                 bool(result["hypotheses"])
                 and result["hypotheses"][0]["name"] == expected_top
+            )
+
+        anomaly_ok = (
+            result["sensor_anomaly"]["suspected"]
+            == scenario["expected_anomaly"]
         )
 
-
-
-
-
-        scenario_passed = condition_ok and first_hypothesis_ok
+        scenario_passed = (
+            condition_ok
+            and first_hypothesis_ok
+            and anomaly_ok
+        )
 
         if scenario_passed:
             passed += 1
@@ -100,34 +149,43 @@ def evaluate_scenarios():
 
         print(f"{status}: {scenario['name']}")
         print(f"  Observed: {result['observed_condition']}")
-
-
-
-        if result["hypotheses"]:
-            print(
-                "  Top hypothesis: "
-                f"{result['hypotheses'][0]['name']}"
-            )
-        else:
-            print("  Top hypothesis: None supported by current rules")
-
-
-
+        print(
+            "  Top hypothesis: "
+            f"{result['hypotheses'][0]['name']}"
+            if result["hypotheses"]
+            else "  Top hypothesis: None supported by current rules"
+        )
+        print(
+            "  Sensor anomaly suspected: "
+            f"{result['sensor_anomaly']['suspected']}"
+        )
 
         if not scenario_passed:
-            print(f"  Expected condition: {scenario['expected_condition']}")
-            print(
-                "  Expected top hypothesis: "
-                f"{scenario['expected_first_hypothesis']}"
-            )
+            if not condition_ok:
+                print(
+                    "  Expected condition: "
+                    f"{scenario['expected_condition']}"
+                )
+
+            if not first_hypothesis_ok:
+                print(
+                    "  Expected top hypothesis: "
+                    f"{expected_top}"
+                )
+
+            if not anomaly_ok:
+                print(
+                    "  Expected sensor anomaly: "
+                    f"{scenario['expected_anomaly']}"
+                )
 
         print()
 
     print(f"Scenarios passed: {passed}/{len(SCENARIOS)}")
 
     print(
-        "Note: This evaluates synthetic test cases against "
-        "prototype rules, not real-world diagnostic accuracy."
+        "Note: These synthetic scenarios test prototype rules, "
+        "not real-world diagnostic accuracy."
     )
 
     return passed == len(SCENARIOS)
