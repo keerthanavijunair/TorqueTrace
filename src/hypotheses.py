@@ -78,7 +78,6 @@ def rank_hypotheses(readings):
         float(row["time_seconds"]) for row in readings
     ]
 
-    # Detect a suspicious abrupt temperature rise and fall.
     sensor_anomaly = detect_temperature_spike(temperatures)
 
     highest_temp = max(temperatures)
@@ -110,6 +109,7 @@ def rank_hypotheses(readings):
     # Hypothesis 1: engine load may be contributing.
     load_score = 0
     load_evidence = []
+    load_score_breakdown = []
 
     if high_load:
         load_score += 1
@@ -117,6 +117,10 @@ def rank_hypotheses(readings):
             f"Engine load reached {highest_load:.1f}%, "
             "meeting the prototype's high-load rule."
         )
+        load_score_breakdown.append({
+            "points": 1,
+            "rule": "High engine load detected",
+        })
 
     if elevated_temp and high_load:
         load_score += 1
@@ -125,6 +129,10 @@ def rank_hypotheses(readings):
             "were both observed in this trace. Their co-occurrence "
             "does not establish causation."
         )
+        load_score_breakdown.append({
+            "points": 1,
+            "rule": "Elevated temperature and high load co-occurred",
+        })
 
     if elevated_temp and not high_load:
         load_evidence.append(
@@ -136,6 +144,7 @@ def rank_hypotheses(readings):
     hypotheses.append({
         "name": "Engine load may be contributing",
         "score": load_score,
+        "score_breakdown": load_score_breakdown,
         "evidence": load_evidence or [
             "The configured rules found no strong high-load signal."
         ],
@@ -152,6 +161,7 @@ def rank_hypotheses(readings):
     # Hypothesis 2: cooling-system performance warrants investigation.
     cooling_score = 0
     cooling_evidence = []
+    cooling_score_breakdown = []
 
     if elevated_temp:
         cooling_score += 2
@@ -159,6 +169,10 @@ def rank_hypotheses(readings):
             f"Coolant temperature reached {highest_temp:.1f} C, "
             "meeting the configured elevated-temperature rule."
         )
+        cooling_score_breakdown.append({
+            "points": 2,
+            "rule": "Elevated coolant temperature detected",
+        })
 
     if temperature_rise >= SIGNIFICANT_TEMP_RISE_C:
         cooling_score += 1
@@ -166,6 +180,10 @@ def rank_hypotheses(readings):
             f"Temperature rose by {temperature_rise:.1f} C "
             "over the recorded trace."
         )
+        cooling_score_breakdown.append({
+            "points": 1,
+            "rule": "Significant temperature rise detected",
+        })
 
     if rapid_rise:
         cooling_score += 1
@@ -173,6 +191,10 @@ def rank_hypotheses(readings):
             f"Temperature rose at {temperature_rise_rate:.1f} C/min, "
             "above the prototype's rapid-rise screening threshold."
         )
+        cooling_score_breakdown.append({
+            "points": 1,
+            "rule": "Rapid temperature rise detected",
+        })
 
     if elevated_temp and not high_load:
         cooling_evidence.append(
@@ -213,6 +235,7 @@ def rank_hypotheses(readings):
     hypotheses.append({
         "name": "Cooling-system performance issue",
         "score": cooling_score,
+        "score_breakdown": cooling_score_breakdown,
         "evidence": cooling_evidence or [
             "The configured rules found no strong temperature signal."
         ],
@@ -294,6 +317,12 @@ def print_report(result):
             f"\n{rank}. {hypothesis['name']} "
             f"(rule score: {hypothesis['score']})"
         )
+
+        print("   Score breakdown:")
+        for item in hypothesis["score_breakdown"]:
+            print(
+                f"   +{item['points']}  {item['rule']}"
+            )
 
         print("   Evidence:")
         for item in hypothesis["evidence"]:
