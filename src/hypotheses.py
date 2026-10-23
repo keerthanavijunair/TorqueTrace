@@ -173,16 +173,20 @@ def rank_hypotheses(readings):
             "points": 2,
             "rule": "Elevated coolant temperature detected",
         })
-
-    if temperature_rise >= SIGNIFICANT_TEMP_RISE_C:
+        
+    if elevated_temp and temperature_rise >= SIGNIFICANT_TEMP_RISE_C:
         cooling_score += 1
         cooling_evidence.append(
             f"Temperature rose by {temperature_rise:.1f} C "
-            "over the recorded trace."
+            "over the recorded trace while reaching the configured "
+            "elevated-temperature threshold."
         )
         cooling_score_breakdown.append({
             "points": 1,
-            "rule": "Significant temperature rise detected",
+            "rule": (
+                "Significant temperature rise with elevated "
+                "coolant temperature"
+            ),
         })
 
     if rapid_rise:
