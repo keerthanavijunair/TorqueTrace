@@ -114,6 +114,38 @@ class TestHypothesisRanking(unittest.TestCase):
         )
         self.assertEqual(result["hypotheses"][0]["score"], 4)
 
+
+    def test_cooling_hypothesis_includes_supporting_readings(self):
+        readings = [
+            {
+                "time_seconds": 0,
+                "coolant_temp_c": 88,
+                "rpm": 900,
+                "engine_load_pct": 20,
+            },
+            {
+                "time_seconds": 180,
+                "coolant_temp_c": 112,
+                "rpm": 2200,
+                "engine_load_pct": 55,
+            },
+        ]
+
+        result = rank_hypotheses(readings)
+        cooling = result["hypotheses"][0]
+
+        self.assertIn("supporting_readings", cooling)
+        self.assertTrue(cooling["supporting_readings"])
+        self.assertEqual(
+            cooling["supporting_readings"][-1]["time_seconds"],
+            180,
+        )
+        self.assertEqual(
+            cooling["supporting_readings"][-1]["coolant_temp_c"],
+            112,
+        )
+
+
     
     def test_normal_trace_has_no_elevated_temperature_condition(self):
         readings = [

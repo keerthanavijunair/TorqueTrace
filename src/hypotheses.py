@@ -80,6 +80,18 @@ def rank_hypotheses(readings):
 
     sensor_anomaly = detect_temperature_spike(temperatures)
 
+
+    supporting_readings = [
+        {
+            "time_seconds": float(row["time_seconds"]),
+            "coolant_temp_c": float(row["coolant_temp_c"]),
+            "rpm": float(row["rpm"]),
+            "engine_load_pct": float(row["engine_load_pct"]),
+        }
+        for row in readings
+    ]
+
+
     highest_temp = max(temperatures)
     highest_load = max(loads)
     highest_rpm = max(rpms)
@@ -239,6 +251,11 @@ def rank_hypotheses(readings):
     hypotheses.append({
         "name": "Cooling-system performance issue",
         "score": cooling_score,
+                "supporting_readings": (
+            supporting_readings
+            if elevated_temp or rapid_rise
+            else []
+        ),
         "score_breakdown": cooling_score_breakdown,
         "evidence": cooling_evidence or [
             "The configured rules found no strong temperature signal."
