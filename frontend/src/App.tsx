@@ -37,8 +37,13 @@ type Diagnosis = {
     hypotheses: {
       name: string
       score: number
+      score_breakdown: {
+        points: number
+        rule: string
+      }[]
       evidence: string[]
       next_test: string
+      supporting_readings: Reading[]
     }[]
     sensor_anomaly: boolean
   }
@@ -372,11 +377,51 @@ function App() {
             <div className="hypothesis-row" key={hypothesis.name}>
               <div className="rank-number">{String(index + 1).padStart(2, '0')}</div>
               <div className="hypothesis-main">
+                
                 <strong>{hypothesis.name}</strong>
                 <span>{hypothesis.evidence.join(' ')}</span>
+
+                <div className="score-breakdown">
+                  <strong>Why this score?</strong>
+                  {hypothesis.score_breakdown.map((item, itemIndex) => (
+                    <div key={`${item.rule}-${itemIndex}`}>
+                      +{item.points} · {item.rule}
+                    </div>
+                  ))}
+                </div>
+
+                {hypothesis.supporting_readings.length > 0 && (
+                  <div className="supporting-readings">
+                    <strong>Supporting readings</strong>
+                    <div className="evidence-table-wrapper">
+                      <table className="evidence-table">
+                        <thead>
+                          <tr>
+                            <th>Time (s)</th>
+                            <th>Coolant (°C)</th>
+                            <th>RPM</th>
+                            <th>Load (%)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {hypothesis.supporting_readings.map((reading) => (
+                            <tr key={reading.time_seconds}>
+                              <td>{reading.time_seconds}</td>
+                              <td>{reading.coolant_temp_c}</td>
+                              <td>{reading.rpm}</td>
+                              <td>{reading.engine_load_pct}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 <div className="next-test">
                   <span>↳ NEXT TEST</span> {hypothesis.next_test}
                 </div>
+
               </div>
               <div className="score-block">
                 <strong>{hypothesis.score}</strong>

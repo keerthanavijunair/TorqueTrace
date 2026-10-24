@@ -109,6 +109,75 @@ h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
 .hypothesis-main > span { display: block; color: #a0acbb; font-size: 11px; line-height: 1.7; }
 .next-test { margin-top: 12px; color: #d2dae4; font-size: 11px; line-height: 1.6; }
 .next-test span { display: block; color: #42e8b4; font: 9px 'DM Mono', monospace; letter-spacing: 0.7px; margin-bottom: 4px; }
+
+.score-breakdown {
+  margin-top: 14px;
+  padding: 12px;
+  background: #111923;
+  border: 1px solid #27313d;
+  border-radius: 8px;
+}
+
+.score-breakdown > strong,
+.supporting-readings > strong {
+  display: block;
+  margin-bottom: 9px;
+  color: #42e8b4;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+}
+
+.score-breakdown > div {
+  padding: 4px 0;
+  color: #aab6c5;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.supporting-readings {
+  margin-top: 12px;
+  min-width: 0;
+}
+
+.evidence-table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #27313d;
+  border-radius: 8px;
+}
+
+.evidence-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 10px 'DM Mono', monospace;
+  white-space: nowrap;
+}
+
+.evidence-table th,
+.evidence-table td {
+  padding: 9px 10px;
+  text-align: left;
+  border-bottom: 1px solid #27313d;
+}
+
+.evidence-table th {
+  color: #8995a5;
+  background: #111923;
+  font-weight: normal;
+}
+
+.evidence-table td {
+  color: #d2dae4;
+}
+
+.evidence-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.evidence-table tbody tr:hover {
+  background: #18232e;
+}
+
 .score-block { text-align: right; flex-shrink: 0; }
 .score-block strong { display: block; font-size: 19px; color: #42e8b4; }
 .score-block span { display: block; color: #8995a5; font-size: 9px; margin-top: 3px; }
