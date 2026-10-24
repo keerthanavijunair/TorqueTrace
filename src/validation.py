@@ -8,7 +8,7 @@ DEFAULT_REQUIRED_FIELDS = (
 )
 
 VALIDATION_RULES = {
-    "coolant_temp_c": (-50, 200),
+    "coolant_temp_c": (-40, 200),
     "engine_load_pct": (0, 100),
     "rpm": (0, float("inf")),
     "vehicle_speed_kmh": (0, float("inf")),

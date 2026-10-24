@@ -62,6 +62,12 @@ class TestVehicleTraceValidation(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "plausible range"):
             validate_vehicle_trace(readings)
 
+    def test_coolant_at_minus_50_is_rejected(self):
+        readings = make_readings(coolant=-50)
+
+        with self.assertRaisesRegex(ValueError, "plausible range"):
+            validate_vehicle_trace(readings)
+
     def test_engine_load_above_100_is_rejected(self):
         readings = make_readings(load=101)
 
