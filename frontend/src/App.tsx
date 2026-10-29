@@ -81,11 +81,13 @@ function App() {
 
       setReadings(data)
       setDiagnosis(result)
-    } catch (err) {
+        } catch (err) {
       setError(
-        err instanceof Error
-          ? `${err.message}. Make sure the TorqueTrace API is running.`
-          : 'Could not connect to the TorqueTrace API.',
+        err instanceof TypeError
+          ? 'Could not connect to the TorqueTrace API. Make sure it is running.'
+          : err instanceof Error
+            ? err.message
+            : 'An unexpected error occurred while analysing this trace.',
       )
     } finally {
       setLoading(false)
@@ -104,8 +106,17 @@ function App() {
     reader.onload = () => {
       try {
         const text = String(reader.result)
-        const lines = text.trim().split(/\r?\n/)
-        const headers = lines[0].split(',').map((header) => header.trim())
+
+if (!text.trim()) {
+  throw new Error('The CSV file is empty.')
+}
+
+const lines = text.replace(/^\uFEFF/, '').trim().split(/\r?\n/)
+const headers = lines[0].split(',').map((header) => header.trim())
+
+if (headers.some((header) => !header)) {
+  throw new Error('The CSV contains an empty column name.')
+}
 
         const required = [
           'time_seconds',
@@ -121,8 +132,11 @@ function App() {
 
         const data = lines.slice(1).filter(Boolean).map((line, index) => {
           const values = line.split(',')
+          
           const record: Record<string, number> = {}
-
+          if (values.length !== headers.length) {
+  throw new Error(`Incorrect number of values on CSV data row ${index + 2}.`)
+}
           headers.forEach((header, column) => {
             record[header] = Number(values[column])
           })
@@ -211,12 +225,13 @@ function App() {
             </p>
           </div>
 
-          <label className="upload-button">
+          <label className={`upload-button ${loading ? 'upload-disabled' : ''}`}>
             <span>↑</span> Upload CSV
             <input
               type="file"
               accept=".csv,text/csv"
               onChange={handleFileUpload}
+              disabled={loading}
               hidden
             />
           </label>
